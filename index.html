@@ -267,8 +267,8 @@ async function post(data){
   if(!urlOk(url)) throw new Error('NOURL');
   await fetch(url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(data)});
 }
-const getQ = () => { try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }catch(e){ return []; } };
-const setQ = q => { localStorage.setItem(QKEY, JSON.stringify(q)); updQueue(); };
+function getQ(){ try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }catch(e){ return []; } }
+function setQ(q){ try{ localStorage.setItem(QKEY, JSON.stringify(q)); }catch(e){} updQueue(); }
 function updQueue(){
   const n = getQ().length;
   $('queue').style.display = n ? 'flex' : 'none';
