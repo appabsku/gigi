@@ -49,6 +49,21 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
 #toast.ok{background:#047857}#toast.bad{background:#b91c1c}
 #queue{display:none;background:#fef3c7;color:#92400e;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px;align-items:center;justify-content:space-between;gap:8px}
 #queue button{background:#92400e;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:600}
+.hdrb{display:flex;gap:8px}
+#pData{position:fixed;inset:0;background:var(--bg);z-index:25;display:none;flex-direction:column}
+#pData.show{display:flex}
+.ph{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.ph h2{font-size:17px;margin:0;flex:1}
+.pt{padding:12px 14px;display:flex;gap:10px;align-items:center;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#pList{flex:1;overflow:auto;padding:12px 14px}
+.it{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);display:flex;gap:10px;align-items:center}
+.it .no{background:var(--p);color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.it .tx{flex:1;min-width:0}.it b{display:block;font-size:15px}
+.it small{color:var(--mu);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it button{background:#fee2e2;color:#b91c1c;border:0;border-radius:8px;padding:8px 12px;font-weight:700}
+.pf{padding:10px 14px;background:#fff;box-shadow:0 -2px 10px rgba(0,0,0,.1)}
+.pf button{width:100%;padding:14px;border:0;border-radius:12px;font-weight:700;font-size:15px;background:#b91c1c;color:#fff}
+.pf button:disabled{opacity:.5}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
 .modal.show{display:flex}
 .box{background:#fff;border-radius:14px;padding:18px;width:100%;max-width:420px}
@@ -59,7 +74,7 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
 <body>
 <header>
   <div><h1>🦷 Data Pasien Poli Gigi</h1><small id="tglHdr"></small></div>
-  <button class="ib" id="bSet" aria-label="Pengaturan">⚙</button>
+  <div class="hdrb"><button class="ib" id="bData" aria-label="Lihat data">📋</button><button class="ib" id="bSet" aria-label="Pengaturan">⚙</button></div>
 </header>
 <main>
   <div id="queue"><span id="qTxt"></span><button id="bSync">Kirim ulang</button></div>
@@ -174,10 +189,17 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
 </main>
 
 <div class="bar">
-  <button type="button" id="bReset">Reset</button>
+  <button type="button" id="bReset">Kosongkan</button>
   <button type="button" id="bKirim">Kirim</button>
 </div>
 <div id="toast"></div>
+
+<div id="pData">
+  <div class="ph"><h2>📋 Data Pasien</h2><button class="ib" id="pTutup" aria-label="Tutup">✕</button></div>
+  <div class="pt"><input type="date" id="pTgl"><button class="ib" id="pMuat" style="background:var(--p)" aria-label="Muat ulang">⟳</button></div>
+  <div id="pList"></div>
+  <div class="pf"><div class="hint" id="pInfo" style="margin:0 0 8px"></div><button id="pReset">Reset data tanggal ini</button></div>
+</div>
 
 <div class="modal" id="mSet"><div class="box">
   <h3>Pengaturan</h3>
@@ -246,8 +268,8 @@ const ICD = [
 // Tindakan = kolom TINDAKAN di REGISTER. gigi:true berarti perlu GT/GS (Tumpatan, Pencabutan).
 const TINDAKAN = [
   {k:'TUMPATAN',  t:'Tumpatan',                       gigi:true},
-  {k:'SEMENTARA', t:'Tumpatan sementara (SemenTara)'},
-  {k:'PULPA',     t:'Pengobatan pulpa (PulPa)'},
+  {k:'SEMENTARA', t:'Tumpatan sementara (Semen Tara)'},
+  {k:'PULPA',     t:'Pengobatan pulpa (Pul Pa)'},
   {k:'JARMUL',    t:'Pengobatan jaringan mulut'},
   {k:'CABUT',     t:'Pencabutan',                     gigi:true},
   {k:'SCALING',   t:'Scaling'},
@@ -452,6 +474,81 @@ $('bSync').addEventListener('click', syncQueue);
 window.addEventListener('online', syncQueue);
 
 $('bReset').addEventListener('click', ()=>{ if(confirm('Kosongkan semua isian?')) resetForm(false); });
+
+/* ---- lihat data, hapus satu pasien, reset satu hari ---- */
+function jsonp(params){
+  return new Promise((res, rej)=>{
+    const url = getUrl();
+    if(!urlOk(url)) return rej(new Error('NOURL'));
+    const cb = 'cb' + Date.now() + Math.floor(Math.random()*1e5);
+    const s = document.createElement('script');
+    const done = ()=>{ clearTimeout(t); delete window[cb]; s.remove(); };
+    const t = setTimeout(()=>{ done(); rej(new Error('TIMEOUT')); }, 60000);
+    window[cb] = d=>{ done(); res(d); };
+    s.onerror = ()=>{ done(); rej(new Error('NET')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + new URLSearchParams(Object.assign({}, params, {callback: cb})).toString();
+    document.head.appendChild(s);
+  });
+}
+const fmtTgl = s => s.split('-').reverse().join('/');
+const pesanErr = e => e.message==='NOURL' ? 'URL spreadsheet belum diatur (tombol ⚙)' : 'Tidak bisa terhubung. Periksa internet lalu coba lagi.';
+function setCnt(n){ try{ localStorage.setItem(cntKey(), n); }catch(e){} fmtHdr(); }
+let pRows = [];
+
+function renderData(tgl){
+  $('pInfo').textContent = pRows.length + ' pasien pada ' + fmtTgl(tgl);
+  $('pReset').disabled = !pRows.length;
+  $('pList').innerHTML = pRows.length ? pRows.map((x,i)=>
+    `<div class="it"><div class="no">${esc(x.urut)}</div><div class="tx"><b>${esc(x.nama)}</b>` +
+    `<small>${esc((x.jk||'').slice(0,1))} · ${esc(x.umur)} th · ${esc(x.icd)} · ${esc(x.status||'')}</small>` +
+    `<small>${esc(x.tindakan||'')}</small></div><button data-i="${i}">Hapus</button></div>`).join('')
+    : '<div class="hint">Belum ada data pada tanggal ini.</div>';
+}
+async function muatData(){
+  const tgl = $('pTgl').value;
+  if(!tgl) return;
+  $('pList').innerHTML = '<div class="hint">Memuat…</div>'; $('pReset').disabled = true; $('pInfo').textContent = '';
+  try{
+    const r = await jsonp({action:'list', tanggal:tgl});
+    if(!r.ok) throw new Error(r.error || 'gagal');
+    pRows = r.rows;
+    if(tgl===today()) setCnt(r.jumlah);
+    renderData(tgl);
+  }catch(err){
+    $('pList').innerHTML = '<div class="hint">' + esc(err.message==='NOURL' ? pesanErr(err) : 'Gagal memuat: ' + (err.message==='NET'||err.message==='TIMEOUT' ? 'tidak ada koneksi' : err.message)) + '</div>';
+  }
+}
+$('bData').addEventListener('click', ()=>{ $('pTgl').value = today(); $('pData').classList.add('show'); muatData(); });
+$('pTutup').addEventListener('click', ()=>$('pData').classList.remove('show'));
+$('pMuat').addEventListener('click', muatData);
+$('pTgl').addEventListener('change', muatData);
+
+$('pList').addEventListener('click', async e=>{
+  const b = e.target.closest('button[data-i]');
+  if(!b) return;
+  const x = pRows[+b.dataset.i];
+  if(!confirm('Hapus data "' + x.nama + '" (no. ' + x.urut + ')?')) return;
+  b.disabled = true;
+  try{
+    const r = await jsonp({action:'hapus', id:x.id});
+    if(!r.ok) throw new Error(r.error || 'gagal');
+    toast('✔ Data dihapus', 'ok');
+  }catch(err){ toast(err.message==='NOURL' ? pesanErr(err) : 'Gagal menghapus: ' + err.message, 'bad'); }
+  muatData();
+});
+
+$('pReset').addEventListener('click', async ()=>{
+  const tgl = $('pTgl').value;
+  if(!pRows.length) return;
+  if(!confirm('RESET: hapus SEMUA ' + pRows.length + ' data pasien tanggal ' + fmtTgl(tgl) + '?\nTidak bisa dibatalkan.')) return;
+  $('pReset').disabled = true;
+  try{
+    const r = await jsonp({action:'reset', tanggal:tgl});
+    if(!r.ok) throw new Error(r.error || 'gagal');
+    toast('✔ ' + r.dihapus + ' data dihapus', 'ok');
+  }catch(err){ toast(err.message==='NOURL' ? pesanErr(err) : 'Gagal reset: ' + err.message, 'bad'); }
+  muatData();
+});
 
 /* ---- pengaturan ---- */
 $('bSet').addEventListener('click', ()=>{ $('url').value = localStorage.getItem(UKEY) || (urlOk(DEFAULT_SCRIPT_URL)?DEFAULT_SCRIPT_URL:''); $('mSet').classList.add('show'); });
