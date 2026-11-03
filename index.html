@@ -1,3 +1,4 @@
+<!-- Built with iappyxOS — https://github.com/iappyx/iappyxOS -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -100,19 +101,19 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
       <div class="msg">Alamat wajib diisi</div>
     </div>
 
-    <div class="row">
-      <div class="f" id="f-wil">
-        <label class="l">Wilayah <span>*</span></label>
-        <div class="seg">
-          <label><input type="radio" name="wil" value="Dalam" checked><div>Dalam</div></label>
-          <label><input type="radio" name="wil" value="Luar"><div>Luar</div></label>
-        </div>
-        <div class="msg">Pilih wilayah</div>
+    <div class="f" id="f-desa">
+      <label class="l" for="desa">Desa / Kelurahan <em>(opsional)</em></label>
+      <select id="desa"></select>
+      <div class="hint">Wilayah terisi otomatis dari desa</div>
+    </div>
+
+    <div class="f" id="f-wil">
+      <label class="l">Wilayah <span>*</span></label>
+      <div class="seg">
+        <label><input type="radio" name="wil" value="Dalam" checked><div>Dalam</div></label>
+        <label><input type="radio" name="wil" value="Luar"><div>Luar</div></label>
       </div>
-      <div class="f" id="f-desa">
-        <label class="l" for="desa">Kode Desa <em>(opsional)</em></label>
-        <input type="text" id="desa" inputmode="numeric" placeholder="Kode desa">
-      </div>
+      <div class="msg">Pilih wilayah</div>
     </div>
 
     <div class="sec">Diagnosa</div>
@@ -192,6 +193,11 @@ const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzC-dLYQFyNP
 // Umur sampai angka ini disarankan "gigi sulung"
 const BATAS_GIGI_SULUNG = 6;
 
+// Kode desa. Yang tersimpan hanya kodenya. 90 = luar wilayah; 07 tidak mengubah pilihan Wilayah.
+const DESA = [['01','Sambirejo'],['02','Tanjungrejo'],['03','Tambahrejo'],['04','Kropak'],['05','Kalirejo'],
+  ['06','Dapurno'],['07','-'],['08','Wirosari'],['09','Kunden'],['90','Luar wilayah']];
+const DESA_LUAR = ['90'];
+
 // Daftar ICD-10. Kolom REGISTER: K02, K04 (termasuk abses K04.x), K05, K00.6; selain itu masuk LAINNYA.
 const ICD = [
   ['K00','Gangguan perkembangan & erupsi gigi'],
@@ -229,7 +235,10 @@ const ICD = [
   ['K12','Stomatitis & lesi sejenis'],
   ['K12.0','Stomatitis aftosa rekuren'],
   ['K13','Penyakit bibir & mukosa mulut lainnya'],
+  ['K13.0','Angular cheilitis'],
   ['K14','Penyakit lidah'],
+  ['L51','Eritema multiformis'],
+  ['R.51','Nyeri orofasial'],
   ['S02.5','Fraktur gigi'],
   ['LAIN','Lainnya (ketik manual)']
 ];
@@ -277,6 +286,7 @@ function fmtHdr(){
 
 /* ---- isi pilihan ---- */
 (function init(){
+  $('desa').innerHTML = '<option value="">— Pilih desa —</option>' + DESA.map(([k,v])=>`<option value="${k}">${k} — ${esc(v)}</option>`).join('');
   $('icd').innerHTML = '<option value="">— Pilih kode ICD-10 —</option>' +
     ICD.map(([k,v]) => `<option value="${esc(k)}">${esc(k==='LAIN'?v:k+' — '+v)}</option>`).join('');
   $('biaya').innerHTML = '<option value="">— Pilih biaya —</option>' + BIAYA.map(b=>`<option>${esc(b)}</option>`).join('');
@@ -284,6 +294,14 @@ function fmtHdr(){
   $('chips').innerHTML = TINDAKAN.map(x=>`<label><input type="checkbox" value="${x.k}"><div>${esc(x.t)}</div></label>`).join('');
   $('tgl').value = today(); fmtHdr(); updQueue();
 })();
+
+/* ---- desa -> wilayah otomatis (90 = Luar, 07 dibiarkan, lainnya = Dalam) ---- */
+$('desa').addEventListener('change', e=>{
+  const v = e.target.value;
+  if(!v || v==='07') return;
+  const w = DESA_LUAR.includes(v) ? 'Luar' : 'Dalam';
+  document.querySelector(`input[name=wil][value=${w}]`).checked = true;
+});
 
 $('icd').addEventListener('change', e=>{
   const v = e.target.value, lain = v==='LAIN';
@@ -368,7 +386,7 @@ function collect(){
     jk: document.querySelector('input[name=jk]:checked').value,
     umur: +$('umur').value,
     alamat: $('alamat').value.trim(),
-    kodeDesa: $('desa').value.trim(),
+    kodeDesa: $('desa').value,
     wilayah: document.querySelector('input[name=wil]:checked').value,
     icd: kode,
     ketIcd: ket,
