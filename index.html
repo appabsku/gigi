@@ -137,7 +137,7 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
       <label class="l" for="icd">ICD-10 <span>*</span></label>
       <select id="icd"></select>
       <div class="hint" id="icdHint"></div>
-      <input type="text" id="icdLain" placeholder="Ketik kode ICD-10 + keterangan" style="display:none;margin-top:6px">
+      <input type="text" id="icdLain" placeholder="Ketik kode ICD-10 + keterangan, mis. K03 / K07 / S02.5" style="display:none;margin-top:6px">
       <div class="msg">Pilih kode ICD-10</div>
     </div>
 
@@ -161,8 +161,8 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
     <div class="f" id="f-gigi" style="display:none">
       <label class="l">Jenis Gigi <span>*</span></label>
       <div class="seg">
-        <label><input type="radio" name="gigi" value="tetap"><div>Gigi Tetap</div></label>
-        <label><input type="radio" name="gigi" value="sulung"><div>Gigi Sulung</div></label>
+        <label><input type="radio" name="gigi" value="tetap"><div>Gigi Tetap (GT)</div></label>
+        <label><input type="radio" name="gigi" value="susu"><div>Gigi Susu (GS)</div></label>
       </div>
       <div class="hint">Terisi otomatis dari umur, ubah bila perlu</div>
       <div class="msg">Pilih jenis gigi</div>
@@ -212,7 +212,7 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
 /* ================= KONFIGURASI ================= */
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzC-dLYQFyNPHwNSyagYk3Do9zhvXiMFv4lwbWKdjRmGEaa68WVERag1TbAbCCLKBGx/exec';
 
-// Umur sampai angka ini disarankan "gigi sulung"
+// Umur sampai angka ini disarankan "gigi susu (GS)"
 const BATAS_GIGI_SULUNG = 6;
 
 // Kode desa. Yang tersimpan hanya kodenya. 90 = luar wilayah; 07 tidak mengubah pilihan Wilayah.
@@ -220,49 +220,13 @@ const DESA = [['01','Sambirejo'],['02','Tanjungrejo'],['03','Tambahrejo'],['04',
   ['06','Dapurno'],['07','-'],['08','Wirosari'],['09','Kunden'],['90','Luar wilayah']];
 const DESA_LUAR = ['90'];
 
-// Daftar ICD-10. Kolom REGISTER: K02, K04 (termasuk abses K04.x), K05, K00.6; selain itu masuk LAINNYA.
+// Daftar ICD-10 sesuai kolom REGISTER: K02, K04, K05, K006, dan LAINNYA (kode diketik manual).
 const ICD = [
-  ['K00','Gangguan perkembangan & erupsi gigi'],
-  ['K00.6','Gangguan erupsi gigi (persistensi gigi sulung)'],
-  ['K01','Gigi terpendam / impaksi'],
-  ['K01.1','Gigi impaksi'],
   ['K02','Karies gigi'],
-  ['K02.0','Karies terbatas pada email'],
-  ['K02.1','Karies dentin'],
-  ['K02.2','Karies sementum'],
-  ['K02.9','Karies gigi, tidak spesifik'],
-  ['K03','Penyakit jaringan keras gigi lainnya'],
-  ['K03.6','Deposit (akresi) pada gigi / karang gigi'],
   ['K04','Penyakit pulpa & jaringan periapikal'],
-  ['K04.0','Pulpitis'],
-  ['K04.1','Nekrosis pulpa'],
-  ['K04.5','Periodontitis apikalis kronis'],
-  ['K04.6','Abses periapikal dengan sinus'],
-  ['K04.7','Abses periapikal tanpa sinus'],
   ['K05','Gingivitis & penyakit periodontal'],
-  ['K05.0','Gingivitis akut'],
-  ['K05.1','Gingivitis kronis'],
-  ['K05.2','Periodontitis akut'],
-  ['K05.3','Periodontitis kronis'],
-  ['K06','Gangguan gusi & prosesus alveolaris lainnya'],
-  ['K07','Anomali dentofasial (termasuk maloklusi)'],
-  ['K07.6','Gangguan sendi temporomandibular'],
-  ['K08','Gangguan gigi & struktur penyangga lainnya'],
-  ['K08.1','Kehilangan gigi (kecelakaan, pencabutan, periodontitis lokal)'],
-  ['K08.3','Sisa akar gigi (retained dental root)'],
-  ['K08.8','Kelainan gigi & struktur penyangga lainnya'],
-  ['K09','Kista daerah mulut'],
-  ['K10','Penyakit rahang lainnya'],
-  ['K11','Penyakit kelenjar ludah'],
-  ['K12','Stomatitis & lesi sejenis'],
-  ['K12.0','Stomatitis aftosa rekuren'],
-  ['K13','Penyakit bibir & mukosa mulut lainnya'],
-  ['K13.0','Angular cheilitis'],
-  ['K14','Penyakit lidah'],
-  ['L51','Eritema multiformis'],
-  ['R.51','Nyeri orofasial'],
-  ['S02.5','Fraktur gigi'],
-  ['LAIN','Lainnya (ketik manual)']
+  ['K00.6','Persistensi gigi susu (kolom K006)'],
+  ['LAIN','LAINNYA (ketik kode ICD-10)']
 ];
 
 // Tindakan = kolom TINDAKAN di REGISTER. gigi:true berarti perlu GT/GS (Tumpatan, Pencabutan).
@@ -270,7 +234,8 @@ const TINDAKAN = [
   {k:'TUMPATAN',  t:'Tumpatan',                       gigi:true},
   {k:'SEMENTARA', t:'Tumpatan sementara (Semen Tara)'},
   {k:'PULPA',     t:'Pengobatan pulpa (Pul Pa)'},
-  {k:'JARMUL',    t:'Pengobatan jaringan mulut'},
+  {k:'JM_PERIO',  t:'Pengobatan jaringan mulut: periodontitis'},
+  {k:'JM_ABSES',  t:'Pengobatan jaringan mulut: abses'},
   {k:'CABUT',     t:'Pencabutan',                     gigi:true},
   {k:'SCALING',   t:'Scaling'},
   {k:'LAIN',      t:'Lain-lain / konsultasi'}
@@ -339,7 +304,7 @@ function umurNilai(){ const v = $('umur').value; return v==='' ? NaN : +v; }
 function saranGigi(){
   const u = umurNilai();
   if(isNaN(u) || gigiManual) return;
-  const v = u <= BATAS_GIGI_SULUNG ? 'sulung' : 'tetap';
+  const v = u <= BATAS_GIGI_SULUNG ? 'susu' : 'tetap';
   document.querySelector(`input[name=gigi][value=${v}]`).checked = true;
 }
 function updTindakanUI(){
@@ -353,7 +318,7 @@ $('chips').addEventListener('change', updTindakanUI);
 document.querySelectorAll('input[name=gigi]').forEach(r=>r.addEventListener('change',()=>{ gigiManual = true; }));
 $('umur').addEventListener('input', ()=>{
   const u = umurNilai();
-  $('umurHint').textContent = isNaN(u) ? '' : (u<=BATAS_GIGI_SULUNG ? 'Biasanya gigi sulung' : '');
+  $('umurHint').textContent = isNaN(u) ? '' : (u<=BATAS_GIGI_SULUNG ? 'Biasanya gigi susu (GS)' : '');
   saranGigi();
 });
 
@@ -389,7 +354,7 @@ document.querySelectorAll('input,select').forEach(el=>{
 function teksTindakan(){
   const c = checked();
   const g = (document.querySelector('input[name=gigi]:checked')||{}).value;
-  const gt = g==='sulung' ? ' gigi sulung' : ' gigi tetap';
+  const gt = g==='susu' ? ' gigi susu' : ' gigi tetap';
   const lain = $('lain').value.trim();
   return TINDAKAN.filter(x=>c.includes(x.k)).map(x=>{
     if(x.gigi) return x.t + gt;
