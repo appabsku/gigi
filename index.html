@@ -168,10 +168,7 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
       <div class="msg">Pilih jenis gigi</div>
     </div>
 
-    <div class="f" id="f-lain" style="display:none">
-      <label class="l" for="lain">Keterangan lain-lain <em>(opsional)</em></label>
-      <input type="text" id="lain" placeholder="Mis. konsultasi, insisi abses">
-    </div>
+    <div id="ketBox"></div>
 
     <div class="f" id="f-lanjut">
       <label class="l" for="lanjut">Tindakan Lanjut</label>
@@ -231,14 +228,14 @@ const ICD = [
 
 // Tindakan = kolom TINDAKAN di REGISTER. gigi:true berarti perlu GT/GS (Tumpatan, Pencabutan).
 const TINDAKAN = [
-  {k:'TUMPATAN',  t:'Tumpatan',                       gigi:true},
-  {k:'SEMENTARA', t:'Tumpatan sementara (Semen Tara)'},
-  {k:'PULPA',     t:'Pengobatan pulpa (Pul Pa)'},
-  {k:'JM_PERIO',  t:'Pengobatan jaringan mulut: periodontitis'},
-  {k:'JM_ABSES',  t:'Pengobatan jaringan mulut: abses'},
-  {k:'CABUT',     t:'Pencabutan',                     gigi:true},
-  {k:'SCALING',   t:'Scaling'},
-  {k:'LAIN',      t:'Lain-lain / konsultasi'}
+  {k:'TUMPATAN',  t:'Tumpatan',                       s:'tumpatan', gigi:true},
+  {k:'SEMENTARA', t:'Tumpatan sementara (Semen Tara)', s:'semen tara'},
+  {k:'PULPA',     t:'Pengobatan pulpa (Pul Pa)',      s:'pul pa'},
+  {k:'JM_PERIO',  t:'Pengobatan jaringan mulut: periodontitis', s:'periodontitis'},
+  {k:'JM_ABSES',  t:'Pengobatan jaringan mulut: abses', s:'abses'},
+  {k:'CABUT',     t:'Pencabutan',                     s:'pencabutan', gigi:true},
+  {k:'SCALING',   t:'Scaling',                        s:'scaling'},
+  {k:'LAIN',      t:'Lain-lain / konsultasi',         s:'lain-lain'}
 ];
 
 // Kolom TINDAKAN LANJUT di REGISTER
@@ -299,6 +296,19 @@ $('icd').addEventListener('change', e=>{
 
 /* ---- tindakan: tampilkan isian tambahan sesuai pilihan ---- */
 let gigiManual = false;
+const ketVal = {};   // isi keterangan per tindakan, dipertahankan saat pilihan berubah
+function renderKet(){
+  const c = checked();
+  $('ketBox').innerHTML = TINDAKAN.filter(x=>c.includes(x.k)).map(x=>
+    `<div class="f"><label class="l" for="ket_${x.k}">Keterangan ${esc(x.s)} <em>(opsional)</em></label>` +
+    `<input type="text" id="ket_${x.k}" data-k="${x.k}" placeholder="Mis. UKS" value="${esc(ketVal[x.k]||'')}"></div>`).join('');
+}
+$('ketBox').addEventListener('input', e=>{ const k = e.target.dataset.k; if(k) ketVal[k] = e.target.value; });
+function teksKet(){
+  const c = checked();
+  const it = TINDAKAN.filter(x=>c.includes(x.k)).map(x=>[x.s, (ketVal[x.k]||'').trim()]).filter(a=>a[1]);
+  return it.length===1 ? it[0][1] : it.map(a=>a[0] + ': ' + a[1]).join('; ');
+}
 const checked = () => [...document.querySelectorAll('#chips input:checked')].map(i=>i.value);
 function umurNilai(){ const v = $('umur').value; return v==='' ? NaN : +v; }
 function saranGigi(){
@@ -311,7 +321,7 @@ function updTindakanUI(){
   const c = checked();
   const perluGigi = TINDAKAN.some(x=>x.gigi && c.includes(x.k));
   $('f-gigi').style.display = perluGigi ? 'block' : 'none';
-  $('f-lain').style.display = c.includes('LAIN') ? 'block' : 'none';
+  renderKet();
   if(perluGigi) saranGigi();
 }
 $('chips').addEventListener('change', updTindakanUI);
@@ -355,10 +365,8 @@ function teksTindakan(){
   const c = checked();
   const g = (document.querySelector('input[name=gigi]:checked')||{}).value;
   const gt = g==='susu' ? ' gigi susu' : ' gigi tetap';
-  const lain = $('lain').value.trim();
   return TINDAKAN.filter(x=>c.includes(x.k)).map(x=>{
     if(x.gigi) return x.t + gt;
-    if(x.k==='LAIN') return lain ? 'Lain-lain: ' + lain : 'Lain-lain / konsultasi';
     return x.t;
   }).join(' + ');
 }
@@ -379,6 +387,7 @@ function collect(){
     ketIcd: ket,
     statusKasus: document.querySelector('input[name=status]:checked').value,
     tindakan: teksTindakan(),
+    ketTindakan: teksKet(),
     lanjut: $('lanjut').value,
     biaya: $('biaya').value,
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7)
@@ -404,7 +413,7 @@ function resetForm(keepDate){
   $('frm').reset();                       // status = Baru dan wilayah = Dalam kembali ke bawaan
   $('tgl').value = keepDate ? d : today();
   $('icdLain').style.display='none'; $('icdHint').textContent=''; $('umurHint').textContent='';
-  gigiManual = false; updTindakanUI();
+  gigiManual = false; Object.keys(ketVal).forEach(k=>delete ketVal[k]); updTindakanUI();
   document.querySelectorAll('.err').forEach(e=>e.classList.remove('err'));
 }
 
@@ -466,7 +475,7 @@ function renderData(tgl){
   $('pList').innerHTML = pRows.length ? pRows.map((x,i)=>
     `<div class="it"><div class="no">${esc(x.urut)}</div><div class="tx"><b>${esc(x.nama)}</b>` +
     `<small>${esc((x.jk||'').slice(0,1))} · ${esc(x.umur)} th · ${esc(x.icd)} · ${esc(x.status||'')}</small>` +
-    `<small>${esc(x.tindakan||'')}</small></div><button data-i="${i}">Hapus</button></div>`).join('')
+    `<small>${esc(x.tindakan||'')}</small>` + (x.ket ? `<small>Ket: ${esc(x.ket)}</small>` : '') + `</div><button data-i="${i}">Hapus</button></div>`).join('')
     : '<div class="hint">Belum ada data pada tanggal ini.</div>';
 }
 async function muatData(){
