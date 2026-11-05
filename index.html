@@ -137,7 +137,8 @@ input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(20,184
       <label class="l" for="icd">ICD-10 <span>*</span></label>
       <select id="icd"></select>
       <div class="hint" id="icdHint"></div>
-      <input type="text" id="icdLain" placeholder="Ketik kode ICD-10 + keterangan, mis. K03 / K07 / S02.5" style="display:none;margin-top:6px">
+      <select id="icdLain2" style="display:none;margin-top:6px"></select>
+      <input type="text" id="icdLain" placeholder="Ketik kode ICD-10 + keterangan" style="display:none;margin-top:6px">
       <div class="msg">Pilih kode ICD-10</div>
     </div>
 
@@ -223,7 +224,20 @@ const ICD = [
   ['K04','Penyakit pulpa & jaringan periapikal'],
   ['K05','Gingivitis & penyakit periodontal'],
   ['K00.6','Persistensi gigi susu (kolom K006)'],
-  ['LAIN','LAINNYA (ketik kode ICD-10)']
+  ['LAIN','LAINNYA (pilih kode di bawahnya)']
+];
+// Pilihan di bawah LAINNYA: kode-kode di Formulir 13. Di REGISTER masuk kolom LAINNYA, di Formulir 13 masuk barisnya sendiri.
+const ICD_LAIN = [
+  ['K01.1','Impaksi M3 klasifikasi IA'],
+  ['K03','Penyakit jaringan keras gigi lainnya'],
+  ['K07','Anomali dentofasial'],
+  ['K08','Gangguan gigi & jaringan penyangga lainnya'],
+  ['K12','Stomatitis & lesi-lesi berhubungan'],
+  ['K13.0','Angular cheilitis'],
+  ['L51','Eritema multiformis'],
+  ['R.51','Nyeri orofasial'],
+  ['S02.5','Fraktur mahkota yang tidak merusak pulpa'],
+  ['MANUAL','Kode lain (ketik manual)']
 ];
 
 // Tindakan = kolom TINDAKAN di REGISTER. gigi:true berarti perlu GT/GS (Tumpatan, Pencabutan).
@@ -273,6 +287,8 @@ function fmtHdr(){
   $('desa').innerHTML = '<option value="">— Pilih desa —</option>' + DESA.map(([k,v])=>`<option value="${k}">${k} — ${esc(v)}</option>`).join('');
   $('icd').innerHTML = '<option value="">— Pilih kode ICD-10 —</option>' +
     ICD.map(([k,v]) => `<option value="${esc(k)}">${esc(k==='LAIN'?v:k+' — '+v)}</option>`).join('');
+  $('icdLain2').innerHTML = '<option value="">— Pilih kode LAINNYA —</option>' +
+    ICD_LAIN.map(([k,v]) => `<option value="${esc(k)}">${esc(k==='MANUAL'?v:k+' — '+v)}</option>`).join('');
   $('biaya').innerHTML = '<option value="">— Pilih biaya —</option>' + BIAYA.map(b=>`<option>${esc(b)}</option>`).join('');
   $('lanjut').innerHTML = LANJUT.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('');
   $('chips').innerHTML = TINDAKAN.map(x=>`<label><input type="checkbox" value="${x.k}"><div>${esc(x.t)}</div></label>`).join('');
@@ -287,11 +303,21 @@ $('desa').addEventListener('change', e=>{
   document.querySelector(`input[name=wil][value=${w}]`).checked = true;
 });
 
+function updLainManual(){
+  $('icdLain').style.display = ($('icd').value==='LAIN' && $('icdLain2').value==='MANUAL') ? 'block' : 'none';
+}
 $('icd').addEventListener('change', e=>{
   const v = e.target.value, lain = v==='LAIN';
-  $('icdLain').style.display = lain ? 'block' : 'none';
+  $('icdLain2').style.display = lain ? 'block' : 'none';
+  if(!lain) $('icdLain2').value = '';
+  updLainManual();
   const it = ICD.find(x=>x[0]===v);
   $('icdHint').textContent = (it && !lain) ? it[1] : '';
+});
+$('icdLain2').addEventListener('change', ()=>{
+  updLainManual();
+  const it = ICD_LAIN.find(x=>x[0]===$('icdLain2').value);
+  $('icdHint').textContent = (it && it[0]!=='MANUAL') ? it[1] : '';
 });
 
 /* ---- tindakan: tampilkan isian tambahan sesuai pilihan ---- */
@@ -347,7 +373,7 @@ function validate(){
     setErr('f-umur', umur==='' || +umur<0 || +umur>120),
     setErr('f-alamat', !$('alamat').value.trim()),
     setErr('f-wil', !document.querySelector('input[name=wil]:checked')),
-    setErr('f-icd', !icd || (icd==='LAIN' && !$('icdLain').value.trim())),
+    setErr('f-icd', !icd || (icd==='LAIN' && (!$('icdLain2').value || ($('icdLain2').value==='MANUAL' && !$('icdLain').value.trim())))),
     setErr('f-status', !document.querySelector('input[name=status]:checked')),
     setErr('f-tindakan', c.length===0),
     setErr('f-gigi', perluGigi && !document.querySelector('input[name=gigi]:checked')),
@@ -373,7 +399,11 @@ function teksTindakan(){
 function collect(){
   const icd = $('icd').value;
   let kode = icd, ket = '';
-  if(icd==='LAIN'){ kode = $('icdLain').value.trim(); }
+  if(icd==='LAIN'){
+    const k2 = $('icdLain2').value;
+    if(k2==='MANUAL'){ kode = $('icdLain').value.trim(); }
+    else { kode = k2; ket = (ICD_LAIN.find(x=>x[0]===k2)||[])[1] || ''; }
+  }
   else { ket = (ICD.find(x=>x[0]===icd)||[])[1] || ''; }
   return {
     tanggal: $('tgl').value,
@@ -412,7 +442,7 @@ function resetForm(keepDate){
   const d = $('tgl').value;
   $('frm').reset();                       // status = Baru dan wilayah = Dalam kembali ke bawaan
   $('tgl').value = keepDate ? d : today();
-  $('icdLain').style.display='none'; $('icdHint').textContent=''; $('umurHint').textContent='';
+  $('icdLain').style.display='none'; $('icdLain2').style.display='none'; $('icdHint').textContent=''; $('umurHint').textContent='';
   gigiManual = false; Object.keys(ketVal).forEach(k=>delete ketVal[k]); updTindakanUI();
   document.querySelectorAll('.err').forEach(e=>e.classList.remove('err'));
 }
