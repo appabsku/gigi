@@ -1,4 +1,3 @@
-
 <!-- Built with iappyxOS — https://github.com/iappyx/iappyxOS -->
 <!DOCTYPE html>
 <html lang="id">
@@ -83,6 +82,7 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
 .pf button:disabled{opacity:.45}
 @media (max-width:390px){header{padding-left:14px;padding-right:14px}.brand{gap:9px;min-width:0}.logo{width:38px;height:38px;border-radius:12px}.logo svg{width:20px;height:20px}.ib{width:38px;height:38px}.hdrb{gap:6px}header h1{font-size:17px}header small{font-size:10.5px;padding:2px 8px}.eyebrow{font-size:9px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.it.lama .tx b,.it.lama .tx small:first-of-type{color:var(--err)}
 </style>
 </head>
 <body>
@@ -515,7 +515,7 @@ function renderData(tgl){
   $('pInfo').textContent = pRows.length + ' pasien pada ' + fmtTgl(tgl);
   $('pReset').disabled = !pRows.length;
   $('pList').innerHTML = pRows.length ? pRows.map((x,i)=>
-    `<div class="it"><div class="no">${esc(x.urut)}</div><div class="tx"><b>${esc(x.nama)}</b>` +
+    `<div class="it${/^lama$/i.test(x.status||'') ? ' lama' : ''}"><div class="no">${esc(x.urut)}</div><div class="tx"><b>${esc(x.nama)}</b>` +
     `<small>${esc((x.jk||'').slice(0,1))} · ${esc(x.umur)} th · ${esc(x.icd)} · ${esc(x.status||'')}</small>` +
     `<small>${esc(x.tindakan||'')}</small>` + (x.ket ? `<small>Ket: ${esc(x.ket)}</small>` : '') + `</div><button data-i="${i}">Hapus</button></div>`).join('')
     : '<div class="hint">Belum ada data pada tanggal ini.</div>';
