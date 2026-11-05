@@ -67,11 +67,6 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
 #toast.ok{background:#0b7a5a}#toast.bad{background:#b52a2a}
 #queue{display:none;background:#fff6dd;color:#8a5a0a;border:1px solid #f1d9a0;border-radius:16px;padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:14px;align-items:center;justify-content:space-between;gap:8px}
 #queue button{background:#8a5a0a;color:#fff;border:0;border-radius:10px;padding:8px 13px;font:600 12.5px var(--fb)}
-.modal{position:fixed;inset:0;background:rgba(6,40,38,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
-.modal.show{display:flex}
-.box{background:#fff;border-radius:24px;padding:22px;width:100%;max-width:420px;box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
-.box h3{font-family:var(--fh);font-weight:600;font-size:20px;margin:0 0 12px}
-.box .row{margin-top:14px}.box button{flex:1;padding:13px;border:0;border-radius:14px;font:700 14.5px var(--fb)}
 #pData{position:fixed;inset:0;background:var(--bg);z-index:30;display:none;flex-direction:column}
 #pData.show{display:flex}
 .ph{background:linear-gradient(135deg,var(--pd),var(--p) 55%,var(--p2));color:#fff;padding:max(14px,env(safe-area-inset-top)) 18px 20px;display:flex;align-items:center;gap:10px;border-radius:0 0 28px 28px;box-shadow:0 12px 28px -14px rgba(6,64,60,.7)}
@@ -93,7 +88,7 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
 <body>
 <header>
   <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 3.5c-2.2 0-4 1.8-4 4.3 0 2.1.9 3.4 1.5 5.3.7 2.3.6 7.4 2.2 7.4 1.4 0 1.2-4.2 2.3-4.2h1c1.1 0 .9 4.2 2.3 4.2 1.6 0 1.5-5.1 2.2-7.4.6-1.9 1.5-3.2 1.5-5.3 0-2.5-1.8-4.3-4-4.3-1.6 0-2.2.9-3 .9s-1.4-.9-3-.9z"/></svg></div><div><span class="eyebrow">UPTD Puskesmas Wirosari I</span><h1>Data Pasien Poli Gigi</h1><small id="tglHdr"></small></div></div>
-  <div class="hdrb"><button class="ib" id="bData" aria-label="Lihat data"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button><button class="ib" id="bSet" aria-label="Pengaturan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+  <div class="hdrb"><button class="ib" id="bData" aria-label="Lihat data"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button></div>
 </header>
 <main>
   <div id="queue"><span id="qTxt"></span><button id="bSync">Kirim ulang</button></div>
@@ -130,9 +125,8 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
     </div>
 
     <div class="f" id="f-alamat">
-      <label class="l" for="alamat">Alamat <span>*</span></label>
-      <input type="text" id="alamat" placeholder="Dusun / RT / RW / Desa" autocapitalize="words">
-      <div class="msg">Alamat wajib diisi</div>
+      <label class="l" for="alamat">Alamat <em>(opsional)</em></label>
+      <input type="text" id="alamat" placeholder="Dusun / RT / RW (boleh kosong)" autocapitalize="words">
     </div>
 
     <div class="f" id="f-desa">
@@ -218,16 +212,11 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
   <div class="pf"><div class="hint" id="pInfo" style="margin:0 0 8px"></div><button id="pReset">Reset data tanggal ini</button></div>
 </div>
 
-<div class="modal" id="mSet"><div class="box">
-  <h3>Pengaturan</h3>
-  <label class="l" for="url">URL Web App Google Apps Script</label>
-  <input type="text" id="url" placeholder="https://script.google.com/macros/s/.../exec">
-  <div class="row"><button id="sBatal" style="background:#e8f0ee;color:#3d5a55">Batal</button><button id="sSimpan" style="background:var(--p);color:#fff">Simpan</button></div>
-</div></div>
 
 <script>
 /* ================= KONFIGURASI ================= */
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzC-dLYQFyNPHwNSyagYk3Do9zhvXiMFv4lwbWKdjRmGEaa68WVERag1TbAbCCLKBGx/exec';
+// URL Web App Google Apps Script tertanam di sini (tidak ada menu pengaturan). Ganti hanya bila Anda membuat deployment baru.
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzC-dLYQFyNPHwNSyagYk3Do9zhvXiMFv4lwbWKdjRmGEaa68WVERag1TbAbCCLKBGx/exec';
 
 // Umur sampai angka ini disarankan "gigi susu (GS)"
 const BATAS_GIGI_SULUNG = 6;
@@ -280,8 +269,9 @@ const BIAYA = ['JPS','Non PBI','Anc','Bayar'];
 /* ================================================ */
 
 const $ = id => document.getElementById(id);
-const QKEY = 'pg_queue_v1', UKEY = 'pg_url_v1';
-const getUrl = () => { try{ return localStorage.getItem(UKEY) || DEFAULT_SCRIPT_URL; }catch(e){ return DEFAULT_SCRIPT_URL; } };
+const QKEY = 'pg_queue_v1';
+let syncP = null;                       // proses pengiriman yang sedang berjalan (null = tidak ada)
+const getUrl = () => SCRIPT_URL;
 const urlOk = u => /^https:\/\/script\.google\.com\/.+/.test(u);
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
@@ -390,7 +380,6 @@ function validate(){
     setErr('f-nama', !$('nama').value.trim()),
     setErr('f-jk', !jk),
     setErr('f-umur', umur==='' || +umur<0 || +umur>120),
-    setErr('f-alamat', !$('alamat').value.trim()),
     setErr('f-wil', !document.querySelector('input[name=wil]:checked')),
     setErr('f-icd', !icd || (icd==='LAIN' && (!$('icdLain2').value || ($('icdLain2').value==='MANUAL' && !$('icdLain').value.trim())))),
     setErr('f-status', !document.querySelector('input[name=status]:checked')),
@@ -429,7 +418,7 @@ function collect(){
     nama: $('nama').value.trim(),
     jk: document.querySelector('input[name=jk]:checked').value,
     umur: +$('umur').value,
-    alamat: $('alamat').value.trim(),
+    alamat: $('alamat').value.trim() || '-',   // kosong dikirim sebagai "-"
     kodeDesa: $('desa').value,
     wilayah: document.querySelector('input[name=wil]:checked').value,
     icd: kode,
@@ -447,13 +436,15 @@ function collect(){
 async function post(data){
   const url = getUrl();
   if(!urlOk(url)) throw new Error('NOURL');
-  await fetch(url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(data)});
+  const ac = new AbortController(), t = setTimeout(()=>ac.abort(), 60000);   // server dobel-cek lewat ID, aman diulang
+  try{ await fetch(url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(data), signal: ac.signal}); }
+  finally{ clearTimeout(t); }
 }
 function getQ(){ try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }catch(e){ return []; } }
 function setQ(q){ try{ localStorage.setItem(QKEY, JSON.stringify(q)); }catch(e){} updQueue(); }
 function updQueue(){
   const n = getQ().length;
-  $('queue').style.display = n ? 'flex' : 'none';
+  $('queue').style.display = (n && !syncP) ? 'flex' : 'none';   // saat sedang mengirim, spanduk tidak ditampilkan
   $('qTxt').textContent = n + ' data belum terkirim';
 }
 
@@ -466,32 +457,34 @@ function resetForm(keepDate){
   document.querySelectorAll('.err').forEach(e=>e.classList.remove('err'));
 }
 
-$('bKirim').addEventListener('click', async ()=>{
+$('bKirim').addEventListener('click', ()=>{
   if(!validate()){ toast('Lengkapi data yang ditandai merah','bad'); return; }
-  const data = collect(), b = $('bKirim');
-  b.disabled = true; b.textContent = 'Mengirim…';
-  try{
-    await post(data);
-    addCnt();
-    toast('✔ Data terkirim ke spreadsheet','ok');
-    resetForm(true);
-    $('nama').focus();
-  }catch(err){
-    if(err.message==='NOURL'){ toast('URL spreadsheet belum diatur (tombol ⚙)','bad'); }
-    else { const q=getQ(); q.push(data); setQ(q); addCnt(); toast('Gagal kirim, data disimpan di HP & dicoba lagi nanti','bad'); resetForm(true); }
-  }
-  b.disabled = false; b.textContent = 'Kirim';
+  if(!urlOk(getUrl())){ toast('URL Web App belum diisi di skrip','bad'); return; }
+  const data = collect();
+  const q = getQ(); q.push(data); setQ(q);        // simpan dulu di HP agar aman bila sinyal putus
+  addCnt();
+  toast('✔ Data tersimpan, dikirim ke spreadsheet','ok');
+  resetForm(true);                                // form langsung siap untuk pasien berikutnya
+  $('nama').focus();
+  syncQueue();                                    // pengiriman berjalan di latar
 });
 
-let syncing = false;
-async function syncQueue(){
-  if(syncing) return;
-  const q = getQ(); if(!q.length) return;
-  syncing = true;
-  const rest = [];
-  for(const d of q){ try{ await post(d); }catch(e){ rest.push(d); } }
-  setQ(rest); syncing = false;
-  toast(rest.length ? rest.length+' data masih gagal' : '✔ Semua data tertunda terkirim', rest.length?'bad':'ok');
+// Kirim antrean satu per satu; data dibuang dari HP hanya setelah terkirim. Aman dipanggil berulang.
+function syncQueue(){
+  if(syncP) return syncP;
+  if(!getQ().length) return Promise.resolve();
+  syncP = (async ()=>{
+    let terkirim = 0, gagal = false;
+    while(true){
+      const q = getQ(); if(!q.length) break;
+      try{ await post(q[0]); }catch(e){ gagal = true; break; }
+      const q2 = getQ(); q2.shift(); setQ(q2); terkirim++;
+    }
+    syncP = null; updQueue();
+    if(gagal) toast(getQ().length + ' data belum terkirim, akan dicoba lagi saat online', 'bad');
+    else if(terkirim) toast('✔ ' + terkirim + ' data terkirim ke spreadsheet', 'ok');
+  })();
+  return syncP;
 }
 $('bSync').addEventListener('click', syncQueue);
 window.addEventListener('online', syncQueue);
@@ -514,7 +507,7 @@ function jsonp(params){
   });
 }
 const fmtTgl = s => s.split('-').reverse().join('/');
-const pesanErr = e => e.message==='NOURL' ? 'URL spreadsheet belum diatur (tombol ⚙)' : 'Tidak bisa terhubung. Periksa internet lalu coba lagi.';
+const pesanErr = e => e.message==='NOURL' ? 'URL Web App belum diisi di skrip' : 'Tidak bisa terhubung. Periksa internet lalu coba lagi.';
 function setCnt(n){ try{ localStorage.setItem(cntKey(), n); }catch(e){} fmtHdr(); }
 let pRows = [];
 
@@ -541,7 +534,7 @@ async function muatData(){
     $('pList').innerHTML = '<div class="hint">' + esc(err.message==='NOURL' ? pesanErr(err) : 'Gagal memuat: ' + (err.message==='NET'||err.message==='TIMEOUT' ? 'tidak ada koneksi' : err.message)) + '</div>';
   }
 }
-$('bData').addEventListener('click', ()=>{ $('pTgl').value = today(); $('pData').classList.add('show'); muatData(); });
+$('bData').addEventListener('click', async ()=>{ $('pTgl').value = today(); $('pData').classList.add('show'); $('pList').innerHTML = '<div class="hint">Memuat…</div>'; await syncQueue(); muatData(); });
 $('pTutup').addEventListener('click', ()=>$('pData').classList.remove('show'));
 $('pMuat').addEventListener('click', muatData);
 $('pTgl').addEventListener('change', muatData);
@@ -571,16 +564,6 @@ $('pReset').addEventListener('click', async ()=>{
     toast('✔ ' + r.dihapus + ' data dihapus', 'ok');
   }catch(err){ toast(err.message==='NOURL' ? pesanErr(err) : 'Gagal reset: ' + err.message, 'bad'); }
   muatData();
-});
-
-/* ---- pengaturan ---- */
-$('bSet').addEventListener('click', ()=>{ $('url').value = localStorage.getItem(UKEY) || (urlOk(DEFAULT_SCRIPT_URL)?DEFAULT_SCRIPT_URL:''); $('mSet').classList.add('show'); });
-$('sBatal').addEventListener('click', ()=>$('mSet').classList.remove('show'));
-$('sSimpan').addEventListener('click', ()=>{
-  const v = $('url').value.trim();
-  if(v && !urlOk(v)){ toast('URL tidak valid','bad'); return; }
-  v ? localStorage.setItem(UKEY, v) : localStorage.removeItem(UKEY);
-  $('mSet').classList.remove('show'); toast('Pengaturan disimpan','ok');
 });
 
 if(urlOk(getUrl())) syncQueue();
