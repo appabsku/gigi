@@ -75,6 +75,7 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
 .it{background:#fff;border-radius:18px;padding:13px;margin-bottom:10px;border:1px solid rgba(214,227,224,.8);box-shadow:0 8px 20px -14px rgba(6,64,60,.5);display:flex;gap:12px;align-items:center}
 .it .no{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:14px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;font-variant-numeric:tabular-nums}
 .it .tx{flex:1;min-width:0}.it b{display:block;font-size:14.5px;font-weight:600}
+.it b.lm{color:#d32f2f}
 .it small{color:var(--mu);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .it button{background:#fdeaea;color:#b52a2a;border:0;border-radius:12px;padding:9px 13px;font:700 12.5px var(--fb)}
 .pf{padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.9);box-shadow:0 -10px 24px -14px rgba(6,64,60,.4)}
@@ -82,7 +83,6 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
 .pf button:disabled{opacity:.45}
 @media (max-width:390px){header{padding-left:14px;padding-right:14px}.brand{gap:9px;min-width:0}.logo{width:38px;height:38px;border-radius:12px}.logo svg{width:20px;height:20px}.ib{width:38px;height:38px}.hdrb{gap:6px}header h1{font-size:17px}header small{font-size:10.5px;padding:2px 8px}.eyebrow{font-size:9px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-.it.lama .tx b,.it.lama .tx small:first-of-type{color:var(--err)}
 </style>
 </head>
 <body>
@@ -515,7 +515,7 @@ function renderData(tgl){
   $('pInfo').textContent = pRows.length + ' pasien pada ' + fmtTgl(tgl);
   $('pReset').disabled = !pRows.length;
   $('pList').innerHTML = pRows.length ? pRows.map((x,i)=>
-    `<div class="it${/^lama$/i.test(x.status||'') ? ' lama' : ''}"><div class="no">${esc(x.urut)}</div><div class="tx"><b>${esc(x.nama)}</b>` +
+    `<div class="it"><div class="no">${esc(x.urut)}</div><div class="tx"><b${x.status==='Lama'?' class="lm"':''}>${esc(x.nama)}</b>` +
     `<small>${esc((x.jk||'').slice(0,1))} · ${esc(x.umur)} th · ${esc(x.icd)} · ${esc(x.status||'')}</small>` +
     `<small>${esc(x.tindakan||'')}</small>` + (x.ket ? `<small>Ket: ${esc(x.ket)}</small>` : '') + `</div><button data-i="${i}">Hapus</button></div>`).join('')
     : '<div class="hint">Belum ada data pada tanggal ini.</div>';
