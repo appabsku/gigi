@@ -1,4 +1,3 @@
-<!-- Built with iappyxOS — https://github.com/iappyx/iappyxOS -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -78,6 +77,9 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
 .it b.lm{color:#d32f2f}
 .it small{color:var(--mu);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .it button{background:#fdeaea;color:#b52a2a;border:0;border-radius:12px;padding:9px 13px;font:700 12.5px var(--fb)}
+.it .ac{display:flex;flex-direction:column;gap:6px;flex:none}.it button.ed{background:#e3f1ee;color:#0b5f59}
+#editBar{display:none;background:#e3f1ee;color:#0b5f59;border:1px solid #b9dcd5;border-radius:16px;padding:11px 13px;font-size:13px;font-weight:600;margin-bottom:14px;align-items:center;justify-content:space-between;gap:8px}
+#editBar button{background:#0b5f59;color:#fff;border:0;border-radius:10px;padding:8px 13px;font:600 12.5px var(--fb)}
 .pf{padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.9);box-shadow:0 -10px 24px -14px rgba(6,64,60,.4)}
 .pf button{width:100%;padding:14px;border:0;border-radius:16px;font:700 14.5px var(--fb);background:linear-gradient(135deg,#b52a2a,#d94b4b);color:#fff}
 .pf button:disabled{opacity:.45}
@@ -91,6 +93,7 @@ input:focus,select:focus{border-color:var(--p2);background:#fff;box-shadow:0 0 0
   <div class="hdrb"><button class="ib" id="bData" aria-label="Lihat data"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button></div>
 </header>
 <main>
+  <div id="editBar"><span id="editTxt"></span><button type="button" id="bBatalEdit">Batal</button></div>
   <div id="queue"><span id="qTxt"></span><button id="bSync">Kirim ulang</button></div>
   <form id="frm" class="card" novalidate autocomplete="off">
 
@@ -449,6 +452,7 @@ function updQueue(){
 }
 
 function resetForm(keepDate){
+  keluarEdit();
   const d = $('tgl').value;
   $('frm').reset();                       // status = Baru dan wilayah = Dalam kembali ke bawaan
   $('tgl').value = keepDate ? d : today();
@@ -461,12 +465,16 @@ $('bKirim').addEventListener('click', ()=>{
   if(!validate()){ toast('Lengkapi data yang ditandai merah','bad'); return; }
   if(!urlOk(getUrl())){ toast('URL Web App belum diisi di skrip','bad'); return; }
   const data = collect();
+  const edit = !!editId;
+  if(edit) data.ubahId = editId;                  // server memperbarui data lama (Data Pasien + REGISTER)
   const q = getQ(); q.push(data); setQ(q);        // simpan dulu di HP agar aman bila sinyal putus
-  addCnt();
-  toast('✔ Data tersimpan, dikirim ke spreadsheet','ok');
+  if(!edit) addCnt();
+  toast(edit ? '✔ Perubahan tersimpan, dikirim ke spreadsheet' : '✔ Data tersimpan, dikirim ke spreadsheet','ok');
   resetForm(true);                                // form langsung siap untuk pasien berikutnya
-  $('nama').focus();
-  syncQueue();                                    // pengiriman berjalan di latar
+  if(edit){                                       // setelah terkirim, tampilkan daftar tanggal itu agar hasil perbaikan terlihat
+    const tg = data.tanggal;
+    syncQueue().then(()=>{ $('pTgl').value = tg; $('pData').classList.add('show'); muatData(); });
+  } else { $('nama').focus(); syncQueue(); }
 });
 
 // Kirim antrean satu per satu; data dibuang dari HP hanya setelah terkirim. Aman dipanggil berulang.
@@ -490,6 +498,67 @@ $('bSync').addEventListener('click', syncQueue);
 window.addEventListener('online', syncQueue);
 
 $('bReset').addEventListener('click', ()=>{ if(confirm('Kosongkan semua isian?')) resetForm(false); });
+
+/* ---- mode edit: isi form dari data yang dipilih, kirim ulang untuk memperbaiki sheet ---- */
+let editId = null;
+function keluarEdit(){
+  editId = null; $('editBar').style.display = 'none'; $('bKirim').textContent = 'Kirim';
+}
+$('bBatalEdit').addEventListener('click', ()=>{ resetForm(false); toast('Edit dibatalkan'); });
+const normIcd = s => String(s||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+function isiForm(x){
+  resetForm(false);
+  $('tgl').value = x.tanggal || today();
+  $('nama').value = x.nama || '';
+  const jk = [...document.querySelectorAll('input[name=jk]')].find(r=>r.value.toLowerCase()===String(x.jk||'').toLowerCase());
+  if(jk) jk.checked = true;
+  $('umur').value = (x.umur===''||x.umur==null) ? '' : x.umur;
+  $('umur').dispatchEvent(new Event('input'));
+  $('alamat').value = (x.alamat && x.alamat!=='-') ? x.alamat : '';
+  $('desa').value = x.kodeDesa || '';
+  document.querySelector(`input[name=wil][value=${x.wilayah==='Luar'?'Luar':'Dalam'}]`).checked = true;
+  // ICD
+  const kode = String(x.icd||'').trim(), nk = normIcd(kode);
+  const a = ICD.find(i=>i[0]!=='LAIN' && normIcd(i[0])===nk);
+  $('icd').value = a ? a[0] : 'LAIN';
+  $('icd').dispatchEvent(new Event('change'));
+  if(!a){
+    const b = ICD_LAIN.find(i=>i[0]!=='MANUAL' && normIcd(i[0])===nk);
+    if(b) $('icdLain2').value = b[0]; else { $('icdLain2').value = 'MANUAL'; $('icdLain').value = kode; }
+    $('icdLain2').dispatchEvent(new Event('change'));
+  }
+  const st = document.querySelector(`input[name=status][value=${x.status==='Lama'?'Lama':'Baru'}]`); if(st) st.checked = true;
+  // tindakan (teks dipisah " + ")
+  const keys = new Set(); let gigi = '';
+  String(x.tindakan||'').split(' + ').map(t=>t.trim().toLowerCase()).filter(Boolean).forEach(t=>{
+    const g = /sulung|susu/.test(t) ? 'susu' : (/tetap/.test(t) ? 'tetap' : '');
+    if(t.startsWith('tumpatan sementara')) keys.add('SEMENTARA');
+    else if(t.startsWith('tumpatan')){ keys.add('TUMPATAN'); if(g) gigi = g; }
+    else if(t.startsWith('pengobatan pulpa')) keys.add('PULPA');
+    else if(t.startsWith('pengobatan jaringan mulut')) keys.add(/abses/.test(t) ? 'JM_ABSES' : 'JM_PERIO');
+    else if(t.startsWith('pencabutan')){ keys.add('CABUT'); if(g) gigi = g; }
+    else if(t.startsWith('scaling')) keys.add('SCALING');
+    else keys.add('LAIN');
+  });
+  document.querySelectorAll('#chips input').forEach(i=>{ i.checked = keys.has(i.value); });
+  updTindakanUI();
+  if(gigi){ document.querySelector(`input[name=gigi][value=${gigi}]`).checked = true; gigiManual = true; }
+  // keterangan tindakan
+  const ket = String(x.ket||'').trim();
+  if(ket){
+    const pilih = TINDAKAN.filter(t=>keys.has(t.k)); let dapat = false;
+    ket.split('; ').forEach(p=>{ const m = pilih.find(t=>p.toLowerCase().startsWith(t.s+': ')); if(m){ ketVal[m.k] = p.slice(m.s.length+2); dapat = true; } });
+    if(!dapat && pilih.length) ketVal[pilih[0].k] = ket;
+    renderKet();
+  }
+  if([...$('lanjut').options].some(o=>o.value===x.lanjut)) $('lanjut').value = x.lanjut || '';
+  if([...$('biaya').options].some(o=>o.value===x.biaya)) $('biaya').value = x.biaya;
+  editId = x.id;
+  $('editTxt').textContent = 'Mengedit: ' + x.nama + ' (no. ' + x.urut + ')';
+  $('editBar').style.display = 'flex'; $('bKirim').textContent = 'Simpan Perubahan';
+  $('pData').classList.remove('show'); window.scrollTo({top:0, behavior:'smooth'});
+  toast('Ubah data lalu tekan Simpan Perubahan');
+}
 
 /* ---- lihat data, hapus satu pasien, reset satu hari ---- */
 function jsonp(params){
@@ -517,7 +586,7 @@ function renderData(tgl){
   $('pList').innerHTML = pRows.length ? pRows.map((x,i)=>
     `<div class="it"><div class="no">${esc(x.urut)}</div><div class="tx"><b${x.status==='Lama'?' class="lm"':''}>${esc(x.nama)}</b>` +
     `<small>${esc((x.jk||'').slice(0,1))} · ${esc(x.umur)} th · ${esc(x.icd)} · ${esc(x.status||'')}</small>` +
-    `<small>${esc(x.tindakan||'')}</small>` + (x.ket ? `<small>Ket: ${esc(x.ket)}</small>` : '') + `</div><button data-i="${i}">Hapus</button></div>`).join('')
+    `<small>${esc(x.tindakan||'')}</small>` + (x.ket ? `<small>Ket: ${esc(x.ket)}</small>` : '') + `</div><div class="ac"><button class="ed" data-e="${i}">Edit</button><button data-i="${i}">Hapus</button></div></div>`).join('')
     : '<div class="hint">Belum ada data pada tanggal ini.</div>';
 }
 async function muatData(){
@@ -540,6 +609,8 @@ $('pMuat').addEventListener('click', muatData);
 $('pTgl').addEventListener('change', muatData);
 
 $('pList').addEventListener('click', async e=>{
+  const eb = e.target.closest('button[data-e]');
+  if(eb){ isiForm(pRows[+eb.dataset.e]); return; }
   const b = e.target.closest('button[data-i]');
   if(!b) return;
   const x = pRows[+b.dataset.i];
